@@ -14,7 +14,8 @@ from utilities import time,time2str,Struct,timeit
 from plot_utilities import histogram,figure
 from copy import deepcopy
 
-greek=['alpha','beta','gamma','chi','tau','sigma','lambda','epsilon','zeta','xi','theta','rho','psi']
+greek=['alpha','beta','gamma','chi','tau','sigma','lambda',
+        'epsilon','zeta','xi','theta','rho','psi','mu','nu']
 
 def remove_nan(x,y):
     try:
@@ -290,22 +291,15 @@ def lnprior_function(model):
 
     return _lnprior
 
+class MCMCModel_Meta(object):
 
-class MCMCModel(object):
-    
-    def __init__(self,x,y,function,**kwargs):
-        self.x=x
-        self.y=y
-        self.function=function
+    def __init__(self,**kwargs):
         self.params=kwargs
         
         self.keys=[]
         for key in self.params:
             self.keys.append(key)
-            
-        self.params['_sigma']=Jeffries()
-        self.keys.append('_sigma')        
-        
+
 
         self.index={}
         for i,key in enumerate(self.keys):
@@ -317,39 +311,12 @@ class MCMCModel(object):
         self.initial_value=None
         self.samples=None
         self.last_pos=None
-        
 
-    # Define the probability function as likelihood * prior.
     def lnprior(self,theta):
-        value=0.0
-        for i,key in enumerate(self.keys):
-            value+=self.params[key](theta[i])
-                
-        return value
+        pass
 
     def lnlike(self,theta):
-        params_dict={}
-        for i,key in enumerate(self.keys):
-            if key=='_sigma':
-                sigma=theta[i]
-            else:
-                params_dict[key]=theta[i]
-                
-        y_fit=self.function(self.x,**params_dict)
-        
-        return lognormalpdf(self.y,y_fit,sigma)
-    
-    def lnlike_lownoise(self,theta):
-        params_dict={}
-        for i,key in enumerate(self.keys):
-            if key=='_sigma':
-                sigma=1.0
-            else:
-                params_dict[key]=theta[i]
-                
-        y_fit=self.function(self.x,**params_dict)
-        
-        return lognormalpdf(self.y,y_fit,sigma)
+        pass
 
     def lnprob(self,theta):
         lp = self.lnprior(theta)
@@ -359,7 +326,6 @@ class MCMCModel(object):
 
     def __call__(self,theta):
         return self.lnprob(theta)
-    
 
     def set_initial_values(self,method='prior',*args,**kwargs):
         if method=='prior':
@@ -447,6 +413,12 @@ class MCMCModel(object):
         
         
         fig, axes = py.subplots(len(self.params), 1, sharex=True, figsize=(8, 5*len(args)))
+        try:  # is it iterable?
+            axes[0]
+        except TypeError:
+            axes=[axes]
+
+
 
         labels=[]
         for ax,key in zip(axes,args):
@@ -520,7 +492,7 @@ class MCMCModel(object):
             v=np.percentile(self.samples[:,i], [2.5, 50, 97.5],axis=0)
             py.title(r'$\hat{%s}^{97.5}_{2.5}=%.3f^{+%.3f}_{-%.3f}$' % (label,v[1],(v[2]-v[1]),(v[1]-v[0])))
             py.ylabel(r'$p(%s|{\rm data})$' % label)
-            py.xlabel(label)
+            py.xlabel(r'$%s$' % label)
                 
     def get_distribution(self,key,bins=200):
             
@@ -550,6 +522,82 @@ class MCMCModel(object):
     
         return result
     
+ 
+
+class MCMCModel2(MCMCModel_Meta):
+    def __init__(self,data,lnprior,lnlike,**kwargs):
+
+        self.data=data
+        self.lnprior_function=lnprior
+        self.lnlike_function=lnlike
+
+        MCMCModel_Meta.__init__(self,**kwargs)
+
+    def lnprior(self,theta):
+        params_dict={}
+        for i,key in enumerate(self.keys):
+            params_dict[key]=theta[i]
+                
+        return self.lnprior_function(**params_dict)
+
+    def lnlike(self,theta):
+        params_dict={}
+        for i,key in enumerate(self.keys):
+            params_dict[key]=theta[i]
+                
+        return self.lnlike_function(self.data,**params_dict)
+
+    
+
+
+class MCMCModel(MCMCModel_Meta):
+    
+    def __init__(self,x,y,function,**kwargs):
+        self.x=x
+        self.y=y
+        self.function=function
+        self.params=kwargs
+        
+        MCMCModel_Meta.__init__(self,**kwargs)
+
+        self.params['_sigma']=Jeffries()
+        self.keys.append('_sigma')        
+        self.index['_sigma']=len(self.keys)-1
+
+
+    # Define the probability function as likelihood * prior.
+    def lnprior(self,theta):
+        value=0.0
+        for i,key in enumerate(self.keys):
+            value+=self.params[key](theta[i])
+                
+        return value
+
+    def lnlike(self,theta):
+        params_dict={}
+        for i,key in enumerate(self.keys):
+            if key=='_sigma':
+                sigma=theta[i]
+            else:
+                params_dict[key]=theta[i]
+                
+        y_fit=self.function(self.x,**params_dict)
+        
+        return lognormalpdf(self.y,y_fit,sigma)
+    
+    def lnlike_lownoise(self,theta):
+        params_dict={}
+        for i,key in enumerate(self.keys):
+            if key=='_sigma':
+                sigma=1.0
+            else:
+                params_dict[key]=theta[i]
+                
+        y_fit=self.function(self.x,**params_dict)
+        
+        return lognormalpdf(self.y,y_fit,sigma)
+
+
     def predict(self,x,theta=None):
         
         if theta is None:
