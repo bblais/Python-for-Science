@@ -46,6 +46,31 @@ model.plot_chains()
 model.plot_distributions()
 
 
+# ## What if my data were 2 or 3 data points?
+
+# In[21]:
+
+x=np.random.poisson(lam=10,size=1)
+print x
+
+
+# In[22]:
+
+model=MCMCModel2(x,lnprior,lnlike,
+                mu=Uniform(0,100))
+
+
+# In[23]:
+
+model.run_mcmc(500)
+model.plot_chains()
+
+
+# In[24]:
+
+model.plot_distributions()
+
+
 # In[ ]:
 
 
