@@ -15,7 +15,7 @@ from plot_utilities import histogram,figure
 from copy import deepcopy
 
 greek=['alpha','beta','gamma','chi','tau','sigma','lambda',
-        'epsilon','zeta','xi','theta','rho','psi','mu','nu']
+        'epsilon','zeta','xi','theta','rho','psi','mu','nu','phi']
 
 def remove_nan(x,y):
     try:
