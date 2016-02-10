@@ -613,7 +613,7 @@ class MCMCModel(MCMCModel_Meta):
         y_predict=array([self.function(_,**args) for _ in x])        
         return y_predict
     
-    def plot_predictions(self,x,N=1000):
+    def plot_predictions(self,x,N=1000,color='k'):
         samples=self.samples[-N:,:]
         
         for value in samples:
@@ -624,4 +624,4 @@ class MCMCModel(MCMCModel_Meta):
                 args[key]=v
 
             y_predict=array([self.function(_,**args) for _ in x])        
-            plot(x,y_predict,color="k",alpha=0.05)
+            plot(x,y_predict,color=color,alpha=0.05)
