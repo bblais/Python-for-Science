@@ -88,7 +88,7 @@ def fit(x,y,funcstr,*args,**kwargs):
         result.pandas_result=result2
         
     else:
-        raise ValueError,'Unknown fit name %s' % funcstr
+        raise ValueError('Unknown fit name %s' % funcstr)
         
     return result
         
@@ -107,7 +107,7 @@ def fitval(result,x):
     elif result.type=='exponential':
         y=result.params[0]*np.exp(x*result.params[1])
     else:
-        raise ValueError,'Unknown fit name %s' % result.type
+        raise ValueError('Unknown fit name %s' % result.type)
         
     return y
     
@@ -347,7 +347,7 @@ class MCMCModel_Meta(object):
             print("Sampling Prior...")
             self.sampler.run_mcmc(pos, N,**kwargs)
             print("Done.")
-            print timeit()
+            print(timeit())
 
             # assign the median back into the simulation values
             self.burn()
@@ -373,7 +373,7 @@ class MCMCModel_Meta(object):
             self.last_pos=emcee.utils.sample_ball(vals, 
                             0.05*vals+1e-4, size=self.nwalkers)
         else:
-            raise ValueError,"Unknown method: %s" % method
+            raise ValueError("Unknown method: %s" % method)
 
     def burn(self,burn_percentage=None):
         if not burn_percentage is None:
@@ -395,7 +395,7 @@ class MCMCModel_Meta(object):
         print("Running MCMC...")
         self.sampler.run_mcmc(self.last_pos, N,**kwargs)
         print("Done.")
-        print timeit()
+        print(timeit())
 
         # assign the median back into the simulation values
         self.burn()
