@@ -1,8 +1,8 @@
 import time
 
-from Struct import *
-from Memory import *
-from Waitbar import Waitbar
+from .Struct import *
+from .Memory import *
+from .Waitbar import Waitbar
 
 def HTML(string):
     try:

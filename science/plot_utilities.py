@@ -4,7 +4,7 @@ from pylab import *
 from numpy import *
 numpyhist=histogram
 
-def histogram(y,bins=50,plot=True):
+def histogram(y,bins=50,plot=True,label=None):
     N,bins=numpyhist(y,bins)
     
     dx=bins[1]-bins[0]
@@ -19,7 +19,7 @@ def histogram(y,bins=50,plot=True):
     y=N*1.0/sum(N)/dx
     
     if plot:
-        plt.plot(x,y,'o-')
+        plt.plot(x,y,'o-',label=label)
         yl=plt.gca().get_ylim()
         plt.gca().set_ylim([0,yl[1]])
         xl=plt.gca().get_xlim()

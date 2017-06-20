@@ -6,9 +6,9 @@ path,junk=os.path.split(Struct.__file__)
 plt.style.use(path+'/science.mplstyle')
 
 
-from utilities import *
-from plot_utilities import *
-from stat_utilities import *
+from .utilities import *
+from .plot_utilities import *
+from .stat_utilities import *
 
 
 

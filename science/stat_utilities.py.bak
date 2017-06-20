@@ -5,15 +5,14 @@ import numpy as np
 import pandas
 
 import os,sys
-from numpy import nanmean
+from scipy.stats.stats import nanmean
 from scipy.stats import distributions as D
 from numpy import *
 from pylab import *
 import pylab as py
-from .utilities import time,time2str,Struct,timeit
-from .plot_utilities import histogram,figure
+from utilities import time,time2str,Struct,timeit
+from plot_utilities import histogram,figure
 from copy import deepcopy
-import statsmodels.api as sm
 
 greek=['alpha','beta','gamma','chi','tau','sigma','lambda',
         'epsilon','zeta','xi','theta','rho','psi','mu','nu','phi']
@@ -348,7 +347,7 @@ class MCMCModel_Meta(object):
             print("Sampling Prior...")
             self.sampler.run_mcmc(pos, N,**kwargs)
             print("Done.")
-            print((timeit()))
+            print(timeit())
 
             # assign the median back into the simulation values
             self.burn()
@@ -396,7 +395,7 @@ class MCMCModel_Meta(object):
         print("Running MCMC...")
         self.sampler.run_mcmc(self.last_pos, N,**kwargs)
         print("Done.")
-        print((timeit()))
+        print(timeit())
 
         # assign the median back into the simulation values
         self.burn()
