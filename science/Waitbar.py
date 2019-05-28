@@ -86,7 +86,7 @@ class Waitbar(object):
         self.progBar = "[" + '#'*numHashes + ' '*(allFull-numHashes) + "]"
 
         # figure out where to put the percentage, roughly centered
-        percentPlace = (len(self.progBar) / 2) - len(done_str)/2 
+        percentPlace = (len(self.progBar) // 2) - len(done_str)//2 
         percentString = done_str
 
         # slice the percentage into the bar

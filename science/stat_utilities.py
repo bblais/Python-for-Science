@@ -1,5 +1,5 @@
-import logging
-logging.basicConfig(level=logging.DEBUG)
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 import numpy as np
 import pandas
@@ -13,7 +13,6 @@ import pylab as py
 from .utilities import time,time2str,Struct,timeit
 from .plot_utilities import histogram,figure
 from copy import deepcopy
-import statsmodels.api as sm
 
 greek=['alpha','beta','gamma','chi','tau','sigma','lambda',
         'epsilon','zeta','xi','theta','rho','psi','mu','nu','phi']
@@ -28,6 +27,272 @@ def remove_nan(x,y):
         
     return x,y
     
+class Q(object):
+    
+    def __init__(self, value,std=None,min=None,max=None):
+        self.N=50000
+        
+        if isinstance(value,str):
+            
+            parts=value.split('+-')
+                
+            if len(parts)==1:  # look for 456(23) notation
+            
+                parts=value.split('(')
+                self.value=float(parts[0])
+                
+                parts[1]=parts[1].replace(')','').strip()
+                
+                parts[0]=parts[0].strip()
+                for c in '123456789':
+                    parts[0]=parts[0].replace(c,'0')
+                    
+                parts[0]=parts[0][:-len(parts[1])]+parts[1]
+                
+                self.std=float(parts[0])
+                
+            
+            elif len(parts)==2:
+                self.value=float(parts[0])
+            
+                if '%' in parts[1]:
+                    percent=float(parts[1].replace('%',''))
+                    self.std=np.abs(self.value*percent/100.0)
+                else:            
+                    self.std=float(parts[1])
+        
+        else:
+            if std is None:
+                std=0
+                
+            self.value=float(value)
+            self.std=float(std)
+            
+        if std is None: # use uniform
+            assert not min is None
+            assert not max is None
+        else:
+            self.sample=np.random.randn(self.N)*self.std+self.value
+            if not min is None:  # cut off the sample at a minimum value
+                count=0
+                while True:  # try not to oversample the minimum/maximum value
+                    idx=np.where(self.sample<min)[0]
+                    L=len(idx)
+                    self.sample[idx]=np.random.randn(L)*self.std+self.value
+                    count+=1
+
+                    if not L:
+                        break
+
+                    if count>10:
+                        self.sample[idx]=min
+                        break
+
+            if not max is None:  # cut off the sample at a maximum value
+                count=0
+                while True:  # try not to oversample the minimum/maximum value
+                    idx=np.where(self.sample>max)[0]
+                    L=len(idx)
+                    self.sample[idx]=np.random.randn(L)*self.std+self.value
+                    count+=1
+
+                    if not L:
+                        break
+
+                    if count>10:
+                        self.sample[idx]=max
+                        break
+        
+    @property
+    def mean(self):
+        return np.mean(self.sample)
+
+    @property
+    def median(self):
+        return np.median(self.sample)
+        
+    @property
+    def percentile95(self):
+        return np.percentile(self.sample,[2.5,97.5])
+    
+    def log(self):
+        new=Q(5)
+        new.sample=np.log(self.sample)
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+
+    def exp(self):
+        new=Q(5)
+        new.sample=np.exp(self.sample)
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+    
+    def __add__(self,other):
+        if isinstance(other,Q):
+            sample=other.sample
+        else:
+            sample=other
+        
+        new=Q(5)
+        new.sample=self.sample+sample
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+    def __sub__(self,other):
+        if isinstance(other,Q):
+            sample=other.sample
+        else:
+            sample=other
+        
+        new=Q(5)
+        new.sample=self.sample-sample
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+    
+    def __radd__(self,other):
+        if isinstance(other,Q):
+            sample=other.sample
+        else:
+            sample=other
+        
+        new=Q(5)
+        new.sample=self.sample+sample
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+    def __rsub__(self,other):
+        if isinstance(other,Q):
+            sample=other.sample
+        else:
+            sample=other
+        
+        new=Q(5)
+        new.sample=sample-self.sample
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+
+    def __mul__(self,other):
+        if isinstance(other,Q):
+            sample=other.sample
+        else:
+            sample=other
+        
+        new=Q(5)
+        new.sample=self.sample*sample
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+    
+    def __rmul__(self,other):
+        if isinstance(other,Q):
+            sample=other.sample
+        else:
+            sample=other
+        
+        new=Q(5)
+        new.sample=self.sample*sample
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+    def __neg__(self):
+        
+        new=Q(5)
+        new.sample=-self.sample.copy()
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+
+    def __abs__(self):
+        
+        new=Q(5)
+        new.sample=np.abs(self.sample)
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+
+    def __pos__(self):
+        
+        new=Q(5)
+        new.sample=self.sample.copy()
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+    
+    def __pow__(self,other):
+        if isinstance(other,Q):
+            sample=other.sample
+        else:
+            sample=other
+        
+        new=Q(5)
+        new.sample=self.sample**sample
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+    
+    def __rtruediv__(self,other):
+        if isinstance(other,Q):
+            sample=other.sample
+        else:
+            sample=other
+        
+        new=Q(5)
+        new.sample=sample/self.sample
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+    
+    def __truediv__(self,other):
+        if isinstance(other,Q):
+            sample=other.sample
+        else:
+            sample=other
+        
+        new=Q(5)
+        new.sample=self.sample/sample
+        new.std=np.std(new.sample)
+        new.value=new.mean
+    
+        return new
+    
+    def __iter__(self):
+        return self.sample.flat
+    
+    def __getslice__(self, i, j):
+        return self.sample[i:j]
+    
+    def __getitem__(self,key):
+        return self.sample[key]
+    
+    def __repr__(self):
+        
+        s=str(self.value)+" +- "+str(self.std)
+        s+="\n"
+        pp=self.percentile95.ravel()
+        s+=str(self.median) + ":: 95% range ["+str(pp[0])+" - "+str(pp[1])+"]"
+        return s
+    
+    
+    
+   
+
     
     
 def fit(x,y,funcstr,*args,**kwargs):
@@ -116,10 +381,80 @@ def fitval(result,x):
 
 try:
     import emcee
-    import triangle
 except ImportError:
     pass
     
+def corner(samples,labels):
+    N=len(labels)
+    from matplotlib.colors import LogNorm
+    
+    py.figure(figsize=(12,12))
+    
+    axes={}
+    for i,l1 in enumerate(labels):
+        for j,l2 in enumerate(labels):
+            if j>i:
+                continue
+                
+            ax = py.subplot2grid((N,N),(i, j))
+            axes[(i,j)]=ax
+            
+            idx_y=labels.index(l1)
+            idx_x=labels.index(l2)
+            x,y=samples[:,idx_x],samples[:,idx_y]
+            
+            if i==j:
+                # plot distributions
+                xx,yy=histogram(x,bins=200,plot=False)
+                py.plot(xx,yy,'-o',markersize=3)
+                py.gca().set_yticklabels([])
+                
+                if i==(N-1):
+                    py.xlabel(l2)
+                    [l.set_rotation(45) for l in ax.get_xticklabels()]
+                else:
+                    ax.set_xticklabels([])
+                
+            else:
+                counts,ybins,xbins,image = py.hist2d(x,y,bins=100,norm=LogNorm())
+                #py.contour(counts,extent=[xbins.min(),xbins.max(),ybins.min(),ybins.max()],linewidths=3)
+                
+                if i==(N-1):
+                    py.xlabel(l2)
+                    [l.set_rotation(45) for l in ax.get_xticklabels()]
+                else:
+                    ax.set_xticklabels([])
+                    
+                if j==0:
+                    py.ylabel(l1)
+                    [l.set_rotation(45) for l in ax.get_yticklabels()]
+                else:
+                    ax.set_yticklabels([])
+    
+    # make all the x- and y-lims the same
+    j=0
+    lims=[0]*N
+    for i in range(1,N):
+        ax=axes[(i,0)]
+        lims[i]=ax.get_ylim()
+
+        if i==N-1:
+            lims[0]=ax.get_xlim()
+    
+        
+    for i,l1 in enumerate(labels):
+        for j,l2 in enumerate(labels):
+            if j>i:
+                continue
+                
+            ax=axes[(i,j)]
+            
+            if j==i:
+                ax.set_xlim(lims[i])
+            else:
+                ax.set_ylim(lims[i])
+                ax.set_xlim(lims[j])
+
 
 
 def normal(x,mu,sigma):
@@ -203,7 +538,13 @@ def lognormalpdf(x,mn,sig):
     except TypeError:
         N=1
         
-    return -0.5*np.log(2*np.pi*sig**2)*N - np.sum((x-mn)**2/sig**2/2.0)
+    try:
+        sig1=len(sig)
+        return -0.5*sum(np.log(2*np.pi*sig**2)) - np.sum((x-mn)**2/sig**2/2.0)
+    except TypeError:
+        sig1=1
+
+        return -0.5*np.log(2*np.pi*sig**2)*N - np.sum((x-mn)**2/sig**2/2.0)
     
 def logbernoullipdf(theta, h, N):
     return lognchoosek(N,h)+np.log(theta)*h+np.log(1-theta)*(N-h)
@@ -250,6 +591,20 @@ class Uniform(object):
         
     def __call__(self,x):
         return loguniformpdf(x,self.min,self.max)
+
+class UniformLog(object):
+    def __init__(self,min=0,max=1):
+        self.min=min
+        self.max=max
+        self.default=np.exp((min+max)/2.0)
+       
+    def rand(self,*args):
+        return np.exp(np.random.rand(*args)*(self.max-self.min)+self.min)
+        
+    def __call__(self,x):
+        if x<=0.0:
+            return -np.inf
+        return loguniformpdf(log(x),self.min,self.max)
 
 class Jeffries(object):
     def __init__(self):
@@ -312,6 +667,7 @@ class MCMCModel_Meta(object):
         self.initial_value=None
         self.samples=None
         self.last_pos=None
+        self.max_iterator=1000  # for the sample iterator
 
     def lnprior(self,theta):
         pass
@@ -463,10 +819,26 @@ class MCMCModel_Meta(object):
             labels.append(label)
             idx.append(self.index[key])
         
-        fig = triangle.corner(self.samples[:,idx], labels=labels,**kwargs)
+        fig = corner(self.samples[:,idx], labels=labels,**kwargs)
 
             
     def plot_distributions(self,*args,**kwargs):
+
+        def kdeplot_op(ax,data):
+            from scipy.stats import kde
+            
+            data = np.atleast_2d(data.T).T
+            for i in range(data.shape[1]):
+                d = data[:, i]
+                density = kde.gaussian_kde(d)
+                l = np.min(d)
+                u = np.max(d)
+                x = np.linspace(0, 1, 100) * (u - l) + l
+
+                ax.plot(x, density(x))
+
+
+
         if not args:
             args=self.keys
         
@@ -491,7 +863,7 @@ class MCMCModel_Meta(object):
             py.plot(x,y,'-')
 
             v=np.percentile(self.samples[:,i], [2.5, 50, 97.5],axis=0)
-            py.title(r'$\hat{%s}^{97.5}_{2.5}=%.3f^{+%.3f}_{-%.3f}$' % (label,v[1],(v[2]-v[1]),(v[1]-v[0])))
+            py.title(r'$\hat{%s}^{97.5}_{2.5}=%.3f^{%.3f}_{%.3f}$' % (label,v[1],v[2],v[0]))
             py.ylabel(r'$p(%s|{\rm data})$' % label)
             py.xlabel(r'$%s$' % label)
                 
@@ -514,7 +886,19 @@ class MCMCModel_Meta(object):
         theta=self.median_values
         
         return self.percentiles()
-    
+
+    def sample_iterator(self,*args):
+        s=self.get_samples(*args)
+        L=len(s[0])
+        if L>self.max_iterator:
+            L=self.max_iterator
+        for i in range(L):
+            yield [ss[i] for ss in s]        
+
+    def random_sample(self):
+        return choice(self.samples)
+
+
     def get_samples(self,*args):
         result=[]
         for arg in args:
@@ -523,32 +907,121 @@ class MCMCModel_Meta(object):
     
         return result
     
- 
+    def BIC(self):
+        L=self.lnlike(self.median_values)
+        return log(self.N)*self.k- 2*L
+
+    def WAIC(self):
+        # from https://github.com/pymc-devs/pymc3/blob/02f0b7f9a487cf18e9a48b754b54c2a99cf9fba8/pymc3/stats.py
+        # We get three different measurements:
+        # waic: widely available information criterion
+        # waic_se: standard error of waic
+        # p_waic: effective number parameters
+
+        from scipy.special import logsumexp
+        log_py=np.atleast_2d(array([self.lnprob(theta) 
+                                        for theta in self.samples])).T
+        lppd_i = logsumexp(log_py, axis=0, b=1.0 / len(log_py))
+        vars_lpd = np.var(log_py, axis=0)
+        warn_mg = 0
+        if np.any(vars_lpd > 0.4):
+            warnings.warn("""For one or more samples the posterior variance of the
+            log predictive densities exceeds 0.4. This could be indication of
+            WAIC starting to fail see http://arxiv.org/abs/1507.04544 for details
+            """)
+            warn_mg = 1
+
+        waic_i = - 2 * (lppd_i - vars_lpd)
+        waic = np.sum(waic_i)
+        waic_se = np.sqrt(len(waic_i) * np.var(waic_i))
+        p_waic = np.sum(vars_lpd)            
+
+        return waic,waic_se,p_waic
+
+    def BayesFactor(self,r=0.05):
+        # from http://www.astroml.org/book_figures/chapter5/fig_model_comparison_mcmc.html
+        from scipy.special import gamma
+        import numpy as np
+        from sklearn.neighbors import BallTree
+
+        traces=self.samples
+        logp=np.array([self.lnprob(s) for s in self.samples])
+
+        """Estimate the bayes factor using the local density of points"""
+        N, D = traces.shape
+
+        # compute volume of a D-dimensional sphere of radius r
+        Vr = np.pi ** (0.5 * D) / gamma(0.5 * D + 1) * (r ** D)
+
+        # use neighbor count within r as a density estimator
+        bt = BallTree(traces)
+        count = bt.query_radius(traces, r=r, count_only=True)
+
+        self.BF = logp + np.log(N) + np.log(Vr) - np.log(count)
+
+        p25, p50, p75 = np.percentile(self.BF, [25, 50, 75])
+        return p50, 0.7413 * (p75 - p25)
+
+    def estimate_bayes_factor(traces, logp, r=0.05, return_list=False):
+        from scipy.special import gamma
+        import numpy as np
+        from sklearn.neighbors import BallTree
+        
+        """Estimate the bayes factor using the local density of points"""
+        N, D = traces.shape
+
+        # compute volume of a D-dimensional sphere of radius r
+        Vr = np.pi ** (0.5 * D) / gamma(0.5 * D + 1) * (r ** D)
+
+        # use neighbor count within r as a density estimator
+        bt = BallTree(traces)
+        count = bt.query_radius(traces, r=r, count_only=True)
+
+        BF = logp + np.log(N) + np.log(Vr) - np.log(count)
+
+        if return_list:
+            return BF
+        else:
+            p25, p50, p75 = np.percentile(BF, [25, 50, 75])
+            return p50, 0.7413 * (p75 - p25)
+
+
 
 class MCMCModel2(MCMCModel_Meta):
-    def __init__(self,data,lnprior,lnlike,**kwargs):
+    def __init__(self,data,lnlike,lnprior=None,**kwargs):
 
         self.data=data
         self.lnprior_function=lnprior
         self.lnlike_function=lnlike
 
+
         MCMCModel_Meta.__init__(self,**kwargs)
 
+        self.k=len(self.params)
+        self.N=len(self.data)
+
+
     def lnprior(self,theta):
-        params_dict={}
-        for i,key in enumerate(self.keys):
-            params_dict[key]=theta[i]
-                
-        return self.lnprior_function(**params_dict)
+        if self.lnprior_function is None:
+            value=0.0
+            for i,key in enumerate(self.keys):
+                value+=self.params[key](theta[i])
+                    
+            return value
+        else:
+            params_dict={}
+            for i,key in enumerate(self.keys):
+                params_dict[key]=theta[i]
+                    
+            return self.lnprior_function(**params_dict)
+
 
     def lnlike(self,theta):
         params_dict={}
         for i,key in enumerate(self.keys):
             params_dict[key]=theta[i]
-                
         return self.lnlike_function(self.data,**params_dict)
 
-    
 
 
 class MCMCModel(MCMCModel_Meta):
@@ -564,6 +1037,9 @@ class MCMCModel(MCMCModel_Meta):
         self.params['_sigma']=Jeffries()
         self.keys.append('_sigma')        
         self.index['_sigma']=len(self.keys)-1
+
+        self.k=len(self.params)
+        self.N=len(self.x)
 
 
     # Define the probability function as likelihood * prior.
@@ -616,7 +1092,8 @@ class MCMCModel(MCMCModel_Meta):
     
     def plot_predictions(self,x,N=1000,color='k'):
         samples=self.samples[-N:,:]
-        
+
+        predictions=[]
         for value in samples:
             args={}
             for v,key in zip(value,self.keys):
@@ -626,3 +1103,38 @@ class MCMCModel(MCMCModel_Meta):
 
             y_predict=array([self.function(_,**args) for _ in x])        
             plot(x,y_predict,color=color,alpha=0.05)
+            predictions.append(y_predict)
+
+        return predictions
+
+class MCMCModelErr(MCMCModel):
+
+    def __init__(self,x,y,yerr,function,**kwargs):
+        self.x=x
+        self.y=y
+        self.yerr=yerr
+        self.function=function
+        self.params=kwargs
+        
+        MCMCModel_Meta.__init__(self,**kwargs)
+
+        self.k=len(self.params)
+        self.N=len(self.x)
+
+
+    # Define the probability function as likelihood * prior.
+    def lnprior(self,theta):
+        value=0.0
+        for i,key in enumerate(self.keys):
+            value+=self.params[key](theta[i])
+                
+        return value
+
+    def lnlike(self,theta):
+        params_dict={}
+        for i,key in enumerate(self.keys):
+            params_dict[key]=theta[i]
+                
+        y_fit=self.function(self.x,**params_dict)
+        
+        return lognormalpdf(self.y,y_fit,self.yerr)

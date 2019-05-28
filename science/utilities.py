@@ -80,3 +80,4 @@ class Timer:
         self.interval = self.end - self.start
         if self.verbose:
             print('time taken: %s' % time2str(self.interval))
+
