@@ -4,21 +4,6 @@ from pylab import *
 from numpy import *
 numpyhist=histogram
 
-def subplot(*args):  # avoids deprication error
-    import pylab as plt
-    try:
-        fig=plt.gcf()
-        if args in fig._stored_axes:
-            plt.sca(fig._stored_axes[args])
-        else:
-            plt.subplot(*args)
-            fig._stored_axes[args]=plt.gca()
-    except AttributeError:
-            plt.subplot(*args)
-            fig._stored_axes={}
-            fig._stored_axes[args]=plt.gca()
-
-    return plt.gca()
 
 def histogram(y,bins=50,plot=True,label=None):
     N,bins=numpyhist(y,bins)
