@@ -10,7 +10,8 @@ from scipy.stats import distributions as D
 from numpy import *
 from pylab import *
 import pylab as py
-from .utilities import time,time2str,Struct,timeit
+from .utilities import time,time2str,timeit
+from .Struct import Struct
 from .plot_utilities import histogram,figure
 from copy import deepcopy
 

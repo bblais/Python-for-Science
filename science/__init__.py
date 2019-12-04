@@ -1,6 +1,6 @@
 import os
 import matplotlib.pyplot as plt
-import Struct
+from .Struct import Struct
 
 path,junk=os.path.split(Struct.__file__)
 plt.style.use(path+'/science.mplstyle')
