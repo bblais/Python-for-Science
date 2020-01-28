@@ -1,9 +1,12 @@
 import os
 import matplotlib.pyplot as plt
 from .Struct import Struct
+from .Waitbar import Waitbar
+from .Quantity import Quantity
 
-path,junk=os.path.split(Struct.__file__)
+path,junk=os.path.split(__file__)
 plt.style.use(path+'/science.mplstyle')
+
 
 
 from .utilities import *
