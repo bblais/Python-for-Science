@@ -3,6 +3,7 @@
 
 import numpy as np
 import pandas
+from statsmodels.formula.api import ols
 
 import os,sys
 from numpy import nanmean
@@ -65,7 +66,7 @@ def fit(x,y,funcstr,*args,**kwargs):
             data[key] = x**exponent
             keys.append(key)
 
-        result2=pandas.ols(y=data['y'],x=data[keys])
+        result2=sm.OLS(y=data['y'],x=data[keys])
         keys.reverse()
         keys+=['intercept']
         
@@ -289,8 +290,10 @@ def logbetapdf(theta, h, N):
     return logfact(N+1)-logfact(h)-logfact(N-h)+np.log(theta)*h+np.log(1-theta)*(N-h)
 
 def logexponpdf(x,_lambda):
-    # p(x)=l exp(l x)
-    return _lambda*x + np.log(_lambda)
+    # p(x)=l exp(-l x)
+    if x>0.0:
+        return -_lambda*x + np.log(_lambda)
+    return -np.inf
 
 import scipy.optimize as op
 
