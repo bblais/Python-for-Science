@@ -1,0 +1,17 @@
+LICENSE.md
+README.md
+setup.py
+science/Memory.py
+science/Quantity.py
+science/Struct.py
+science/Waitbar.py
+science/__init__.py
+science/bigfonts.py
+science/plot_utilities.py
+science/science.mplstyle
+science/stat_utilities.py
+science/utilities.py
+science.egg-info/PKG-INFO
+science.egg-info/SOURCES.txt
+science.egg-info/dependency_links.txt
+science.egg-info/top_level.txt
