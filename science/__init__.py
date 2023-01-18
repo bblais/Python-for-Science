@@ -30,6 +30,6 @@ def subplot(*args,**kwargs):  # avoids deprication error
     return plt.gca()
 
 
-__version__="0.0.5"
+__version__="0.0.6"
 print("Version",__version__)
 
